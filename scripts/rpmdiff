@@ -1,0 +1,128 @@
+#!/bin/bash
+#
+#    $Revision: 1.13 $
+#
+# rpmdiff
+#    Perform a diff on the files contained within different rpms and show
+#    the result.
+#    - Intended to be used on src rpms for comparing package builds but can
+#      also be used on binary rpms.
+#
+# Copyright (C) 2005 Simon J. Mudd (sjmudd@pobox.com)
+#
+#    Newer versions of this script may be made available at:
+#        http://ftp.wl0.org/rpmdiff
+#
+# Usage: rpmdiff [diffoptions] <from_rpm> <to_rpm>
+#
+# diffoptions:
+#    Most of the single letter options allowable by GNU diff(1) are acceptable.
+#    By default -uNr is used. If providing a value don't forget the -r option.
+#
+# Exit Status
+#    Same as GNU diff(1): 0 = same, 1 = different and 2 = trouble.
+#
+# License:
+#    This program is free software; you can redistribute it and/or
+#    modify it under the terms of the GNU General Public License
+#    as published by the Free Software Foundation; either version 2
+#    of the License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You may have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307,
+#    USA.
+#
+#    An on-line copy of the GNU General Public License can be found
+#    http://www.fsf.org/copyleft/gpl.html.
+
+[ -n "$DEBUG" ] && set -x
+myname=$(basename $0)
+myversion=$(echo '$Id: rpmdiff,v 1.13 2006/10/11 20:42:05 sjmudd Exp $' | awk '{ print $3 }')
+rpm2cpio=rpm2cpio
+cpio=cpio
+cpiooptions="-idm --quiet"	# src rpms don't normally have directories but allow their creation
+
+# fatal error and stop
+msg_fatal () {
+    echo "FATAL: $*" >&2
+    exit 2
+}
+
+# standard message
+msg_info () {
+    echo "$*"
+}
+
+# cleanup on shutdown
+cleanup () {
+    test -n "${from_dir}" && test -d ${from_dir} && rm -rf ${from_dir}
+    test -n "${to_dir}"   && test -d ${to_dir}   && rm -rf ${to_dir}
+}
+
+# extract rpm to given directory
+# - the directory already exists
+extract_rpm () {
+    local local_rpm="$1"
+    local local_dir="$2"
+
+    msg_info "Extracting files from ${local_rpm} into $(basename ${local_dir})"
+    ${rpm2cpio} ${local_rpm} |\
+	( cd ${local_dir} && ${cpio} ${cpiooptions} ) ||\
+    msg_fatal "problem extracting ${local_rpm} into ${local_dir}"
+}
+
+diffoptions=
+while getopts bBcdeilnNuqrtTwy flag
+do
+	diffoptions="$diffoptions$flag"
+done
+
+shift $(($OPTIND - 1))
+
+[ $# = 2 ] || msg_fatal "usage: rpmdiff [diffoptions] <from-rpm> <to-rpm>"
+
+from_rpm="$1"
+to_rpm="$2"
+diffoptions=${diffoptions:-uNr}
+tmpdir=${TMPDIR:-/tmp}
+
+# checks if rpms are the same
+[ "${from_rpm}" = "${to_rpm}" ] && msg_fatal "no difference between the same rpms"
+
+# get the from
+[ -n ${from_rpm} ] || msg_fatal "empty rpm ${from_rpm} (from)"
+from_dir=$(mktemp -dp ${tmpdir} from.XXXXX) || msg_fatal "can not create directory for extracting ${from_rpm}"
+
+# get the to
+[ -n ${to_rpm} ] || msg_fatal "empty rpm ${to_rpm} (to)"
+to_dir=$(mktemp -dp ${tmpdir} to.XXXXX) || msg_fatal "can not create directory for extracting ${to_rpm}"
+
+# Clean up when done or when aborting.
+trap cleanup 0 1 2 3 15
+
+# extract if we have given an rpm name
+extract_rpm ${from_rpm} ${from_dir}
+extract_rpm ${to_rpm}   ${to_dir}
+
+# get the metadata for non-src-RPMs (which have the spec file inside)
+# - patch from Jan Iven <jan.iven@cern.ch>
+if [[ ! ${from_rpm} =~ ".src.rpm\$" ]]; then
+    rpm -qp --info --changelog --scripts --obsoletes --provides --requires --triggers ${from_rpm} > ${from_dir}/_RPM_METADATA
+fi 
+if [[ ! ${to_rpm} =~ ".src.rpm\$" ]]; then
+    rpm -qp --info --changelog --scripts --obsoletes --provides --requires --triggers ${to_rpm} > ${to_dir}/_RPM_METADATA
+fi 
+
+msg_info "Performing diff -$diffoptions between $(basename ${from_rpm}) and $(basename ${to_rpm})"
+msg_info ""
+# perform a diff and change ${from_dir} -> ${from_rpm}, ${to_dir} -> ${to_rpm}
+diff -${diffoptions} ${from_dir} ${to_dir} | \
+	sed -e "s|${from_dir}|$(basename ${from_rpm})|" -e "s|${to_dir}|$(basename ${to_rpm})|"
+
+# finished
