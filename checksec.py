@@ -23,7 +23,8 @@ except ImportError as exc:
 
 # NOTE: add more APR and other common patterns
 LOCAL_PATTERNS = ["^connect$", "^listen$", "^accept$", "^accept4$",
-                  "^apr_socket_accept$", "PR_Accept", "PR_Listen"]
+                  "^apr_socket_accept$", "PR_Accept", "PR_Listen",
+                  "^getpeername", "^SSL_accept"]
 
 IP_PATTERNS = ["getaddrinfo", "getnameinfo", "getservent", "getservbyname",
                "getservbyport", "gethostbyname", "gethostbyname2",

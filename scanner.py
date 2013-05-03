@@ -27,11 +27,10 @@ import multiprocessing
 import threading
 
 data = {}
-opformat = "json"
 lock = threading.Lock()
 
 
-def analyze(rpmfile, show_errors=False):
+def analyze(rpmfile, show_errors=False, opformat="json"):
     """Analyse single RPM file"""
     if not os.path.exists(rpmfile):
         # print >> sys.stderr, "%s doesn't exists!" % rpmfile
@@ -64,7 +63,7 @@ def analyze(rpmfile, show_errors=False):
         # print fname, mode
         # if mode & 0111:
         #    efiles.append(fname)
-
+    lines = ""
     output = {}
     output["package"] = package
     output["group"] = group
@@ -143,7 +142,7 @@ def analyze(rpmfile, show_errors=False):
                 fileinfo["directory"] = directory
             output["files"].append(fileinfo)
         if returncode == 0 and opformat == "csv":
-            print(dataline)
+            lines = lines + dataline + "\n"
         else:
             # print >> sys.stderr, dataline
             pass
@@ -158,6 +157,8 @@ def analyze(rpmfile, show_errors=False):
 
     if opformat == "json":
         return json.dumps(output)
+    else:
+        return lines.rstrip()
 
 
 def profile_main():
@@ -187,7 +188,6 @@ def main():
 
     path = sys.argv[1]
 
-    global opformat
     if (len(sys.argv) > 2):
         opformat = sys.argv[2]
     else:
@@ -213,7 +213,7 @@ def main():
     outputmap = {}
     if(os.path.isfile(path)):
         sys.stderr.write("Analyzing %s ...\n" % path)
-        out = analyze(path)
+        out = analyze(path, opformat=opformat)
         if out:
             print(out)
     else:
@@ -224,10 +224,11 @@ def main():
                     # print >> sys.stderr, "Skipping", rpmfile
                 #    pass
                 if parallel:
-                    outputmap[rpmfile] = p.apply_async(analyze, (rpmfile,),
+                    outputmap[rpmfile] = p.apply_async(analyze,
+                            (rpmfile, False, opformat),
                             callback = output_callback)
                 else:
-                    out = analyze(rpmfile)
+                    out = analyze(path, opformat=opformat)
                     if out:
                         print(out)
 
