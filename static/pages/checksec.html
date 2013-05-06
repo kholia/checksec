@@ -131,7 +131,7 @@
         return "<th>" + s + "</th>";
       }
 
-      function tdisplay(data) {
+      function tdisplay(data, term) {
         $("#results").html("");
          $.each(data, function(i, element) {
            var table = $('<table></table>').addClass("fancy");
@@ -173,6 +173,7 @@
         });
         $("#term_demo").slideToggle();
         $("#message").slideToggle();
+        term.set_prompt('> ');
       }
 
       // FIXME make this dynamic
@@ -191,13 +192,14 @@
               jdata = JSON.stringify(data);
             term.echo(jdata);
             if (show == 1) {
-              tdisplay(data);
+              tdisplay(data, term);
             }
           },
           error: function (xOptions, textStatus) {
             term.error("could not find that package");
           }
         });
+        term.set_prompt('Loading data. Please wait...');
       }
 
       jQuery(function($, undefined) {
