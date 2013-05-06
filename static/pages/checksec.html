@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>checksec</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="../assets/css/bootstrap.css" rel="stylesheet">
+    <link href="../assets/css/jquery.terminal.css" rel="stylesheet"/>
+    <style>
+      body {
+        padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+      }
+      table.fancy {
+        margin: 1em 1em 1em 0;
+        background: whitesmoke;
+        border-collapse: collapse;
+      }
+      table.fancy th, table.fancy td {
+        border: 1px silver gainsboro;
+        padding: 0.2em;
+      }
+      table.fancy th {
+        background: gainsboro;
+        text-align: left;
+        border: 1px solid #fff;
+      }
+
+      table.fancy caption {
+        margin-left: inherit;
+        margin-right: inherit;
+      }
+
+      table.fancy td {
+          border: 1px solid #fff;
+      }
+
+      .negative { color:red; }
+      .positive { color:green; }
+      .neutral  { color:orange; }
+
+
+    </style>
+    <link href="../assets/css/bootstrap-responsive.css" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="../assets/js/html5shiv.js"></script>
+    <![endif]-->
+
+    <!-- Fav and touch icons -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../assets/ico/apple-touch-icon-114-precomposed.png">
+      <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../assets/ico/apple-touch-icon-72-precomposed.png">
+                    <link rel="apple-touch-icon-precomposed" href="../assets/ico/apple-touch-icon-57-precomposed.png">
+                                   <link rel="shortcut icon" href="../assets/ico/favicon.png">
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="#">checksec</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="active"><a href="#">Home</a></li>
+              <li class="active"><a href="#">Shell</a></li>
+              <li class="active"><a href="#">Queries</a></li>
+              <li><a href="#about">About</a></li>
+              <li><a href="#contact">Contact</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <br>
+      <div id="term_demo"></div>
+      <div id="message" style="display:none"><h4>Press "Escape" to bring back the shell<h4><br></div>
+      <br>
+      <div id="results"></div>
+
+    </div> <!-- /container -->
+
+
+      <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="../assets/js/jquery.js"></script>
+    <script src="../assets/js/bootstrap-transition.js"></script>
+    <script src="../assets/js/bootstrap-alert.js"></script>
+    <script src="../assets/js/bootstrap-modal.js"></script>
+    <script src="../assets/js/bootstrap-dropdown.js"></script>
+    <script src="../assets/js/bootstrap-scrollspy.js"></script>
+    <script src="../assets/js/bootstrap-tab.js"></script>
+    <script src="../assets/js/bootstrap-tooltip.js"></script>
+    <script src="../assets/js/bootstrap-popover.js"></script>
+    <script src="../assets/js/bootstrap-button.js"></script>
+    <script src="../assets/js/bootstrap-collapse.js"></script>
+    <script src="../assets/js/bootstrap-carousel.js"></script>
+    <script src="../assets/js/bootstrap-typeahead.js"></script>
+    <script src="../assets/js/jquery.mousewheel-min.js"></script>
+    <script src="../assets/js/jquery.terminal-min.js"></script>
+    <script src="../assets/js/jquery.jsonp.js"></script>
+
+    <script>
+
+      $(document).keyup(function(e){
+        if(e.keyCode === 27) {
+          $("#term_demo").slideToggle();
+          $("#message").slideToggle();
+        }
+      });
+
+      function tdw(s) {
+        return "<td>" + s + "</td>";
+      }
+
+      function thw(s) {
+        return "<th>" + s + "</th>";
+      }
+
+      function tdisplay(data) {
+        $("#results").html("");
+         $.each(data, function(i, element) {
+           var table = $('<table></table>').addClass("fancy");
+           table.append('<tr><th colspan="9">' +
+             element.build + '</th></tr>');
+           table.append('<tr><th colspan="9">' +
+             element.group + '</th></tr>');
+           table.append('<tr><th colspan="9">daemon => ' +
+             element.daemon + '</th></tr>');
+           table.append("<tr>" + thw("Path") +
+             thw("RELRO") + thw("CANARY") + thw("NX") +
+             thw("PIE") + thw("FORTIFY") + thw("RPATH") +
+             thw("RUNPATH") + thw("CATEGORY") + "</tr>");
+           $.each(element.files, function(i, f) {
+             table.append("<tr>" + tdw(f.name) +
+                tdw(f.RELRO) + tdw(f.CANARY) + tdw(f.NX) +
+                tdw(f.PIE) + tdw(f.FORTIFY) + tdw(f.RPATH) +
+                tdw(f.RUNPATH) + tdw(f.CATEGORY) + "</tr>");
+           });
+           $('#results').append(table);
+           for (var i = 2; i < 7; i++) {
+              $("td:nth-child(" + i + ")").filter(function(index) {
+                  if ($(this).text() == "Disabled")
+                    $(this).addClass("negative");
+                  else if ($(this).text() == "Partial")
+                    $(this).addClass("neutral");
+                  else
+                    $(this).addClass("positive");
+              });
+           }
+           for (var i = 7; i < 9; i++) {
+              $("td:nth-child(" + i + ")").filter(function(index) {
+                  if ($(this).text() != "Disabled")
+                    $(this).addClass("negative");
+                  else
+                    $(this).addClass("positive");
+              });
+           }
+        });
+        $("#term_demo").slideToggle();
+        $("#message").slideToggle();
+      }
+
+      // FIXME make this dynamic
+      baseurl = "http://www.kholia.net:5000/packages";
+      function fetch(api, term, pp, show) {
+        var store = null;
+        var url = baseurl + api + "&callback=?";
+        $.jsonp({
+          url: url,
+          jsonpCallback: 'jsonCallback',
+          dataType: 'jsonp',
+          success: function(data) {
+            if (pp)
+              jdata = JSON.stringify(data, null, '\t');
+            else
+              jdata = JSON.stringify(data);
+            term.echo(jdata);
+            if (show == 1) {
+              tdisplay(data);
+            }
+          },
+          error: function (xOptions, textStatus) {
+            term.error("could not find that package");
+          }
+        });
+      }
+
+      jQuery(function($, undefined) {
+        $('#term_demo').terminal({
+          echo: function(arg1) {
+            this.echo(arg1);
+          },
+          help: function() {
+            this.echo("analyze <pkg>");
+            this.echo("search <name>");
+            this.echo("list");
+          },
+          add: function(a, b) {
+            this.echo(parseInt(a)+parseInt(b));
+          },
+          list: function() {
+            fetch("/?", this, false);
+          },
+          search: function(pkg) {
+            s = "/" + pkg + "/?fuzzy=yes"
+            fetch(s, this, true, 0);
+          },
+          analyze: function(pkg) {
+            s = "/" + pkg + "/?"
+            fetch(s, this, true, 1);
+          },
+        }, { height: 400, prompt: '> ', tabcompletion: true, greetings: "checksec shell\n" });
+      });
+    </script>
+  </body>
+</html>
