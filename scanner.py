@@ -25,7 +25,9 @@ import json
 import stat
 import multiprocessing
 import threading
+from collections import defaultdict
 
+# global stuff
 data = {}
 lock = threading.Lock()
 
@@ -33,11 +35,11 @@ lock = threading.Lock()
 def analyze(rpmfile, show_errors=False, opformat="json"):
     """Analyse single RPM file"""
     if not os.path.exists(rpmfile):
-        # print >> sys.stderr, "%s doesn't exists!" % rpmfile
+        print >> sys.stderr, "%s doesn't exists!" % rpmfile
         return
 
     if not rpmfile.endswith(".rpm"):
-        # print >> sys.stderr, "skipping %s " % rpmfile
+        print >> sys.stderr, "skipping %s " % rpmfile
         return
 
     try:
@@ -48,6 +50,7 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
 
     try:
         ts = rpm.TransactionSet()
+        ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
         fd = os.open(rpmfile, os.O_RDONLY)
         h = ts.hdrFromFdno(fd)
         os.close(fd)
@@ -55,14 +58,16 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
         print >> sys.stderr, rpmfile, str(exc)
         return
 
+    # create lookup dictionary
     package = h[rpm.RPMTAG_NAME]
     group = h[rpm.RPMTAG_GROUP]
-    # for i in range(0, len(files)):
-        # fname = files[i]
-        # mode = modes[i]
-        # print fname, mode
-        # if mode & 0111:
-        #    efiles.append(fname)
+    names = h['FILENAMES']
+    groups = h[rpm.RPMTAG_FILEGROUPNAME]
+    users = h[rpm.RPMTAG_FILEUSERNAME]
+    lookup = defaultdict(list)
+    for n, u, g in zip(names, users, groups):
+        lookup[n].append((u,g))
+
     lines = ""
     output = {}
     output["package"] = package
@@ -94,17 +99,18 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
                 flag = True
                 directory = True
 
-        if not entry.mode & 0111:
+        # check for executable flag
+        if not (entry.mode & 0111):
             continue
 
-        # always report setuid files
+        # always report setxid files
         if ((entry.mode & stat.S_ISUID) or (stat.S_ISGID & entry.mode)):
             flag = True
 
         # skip library files
         filename = entry.pathname.lstrip(".")
-        if ("lib" in filename and ".so" in filename) or \
-           filename.endswith(".so"):
+        if not flag and (("lib" in filename and ".so" in filename) or \
+           filename.endswith(".so")):
             continue
 
         try:
@@ -112,35 +118,37 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
         except Exception:
             continue
 
-        # invoke checksec
+        # invoke checksec only on files
         returncode = -1
-        try:
-            fh = cStringIO.StringIO(contents)
-            elf = Elf(fh)
-            out = process_file(elf)
-            dataline = "%s,%s,%s,%s" % (package, os.path.basename(rpmfile),
-                                        filename, out)
-            returncode = 0
-        except ELFError as exc:
-            if show_errors:
-                print >> sys.stderr, "%s,%s,Not an ELF binary" % \
-                    (filename, str(exc))
-            continue
-        except IOError as exc:
-            if show_errors:
-                print >> sys.stderr, "%s,%s,Not an ELF binary" % \
-                    (filename, str(exc))
-            continue
-
-        if returncode == 0 or flag:
+        if not directory:
+            try:
+                fh = cStringIO.StringIO(contents)
+                elf = Elf(fh)
+                out = process_file(elf)
+                dataline = "%s,%s,%s,%s" % (package, os.path.basename(rpmfile),
+                                            filename, out)
+                returncode = 0
+            except ELFError as exc:
+                if show_errors:
+                    print >> sys.stderr, "%s,%s,Not an ELF binary" % \
+                        (filename, str(exc))
+                continue
+            except IOError as exc:
+                if show_errors:
+                    print >> sys.stderr, "%s,%s,Not an ELF binary" % \
+                        (filename, str(exc))
+                continue
+        if flag or returncode == 0:
             # populate fileinfo object
             fileinfo = {}
             fileinfo["name"] = filename
             fileinfo["size"] = entry.size
             fileinfo["mode"] = entry.mode
+            fileinfo["user"], fileinfo["group"] = lookup[filename][0]
             if directory:
                 fileinfo["directory"] = directory
             output["files"].append(fileinfo)
+
         if returncode == 0 and opformat == "csv":
             lines = lines + dataline + "\n"
         else:
