@@ -90,8 +90,8 @@ def privileged_dangerous(prune=None):
                 if not prune_list.get(build["package"], False):
                     continue
             if (mode & stat.S_ISUID) or (mode & stat.S_ISGID):
-                print "%s\t%-10s\t%-10s\t%s" % (filemode(mode),
-                        f["user"], f["group"], f["name"])
+                print "%-27s\t%s\t%-10s\t%-10s\t%s" % (build["package"],
+                        filemode(mode), f["user"], f["group"], f["name"])
 
 def privileged_nopie():
     setuid = 0

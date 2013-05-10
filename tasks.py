@@ -14,20 +14,24 @@ def add(x, y):
 
 @celery.task
 def process(id):
-    urls = majdoor.fetch_koji_build(id)
+    nvr, urls = majdoor.fetch_koji_build(id)
     if not urls:
         return
     for url in urls:
         basename = url.split('/')[-1]
-        path = os.path.join("cache", basename)
-        output = scanner.analyze(path)
-        print output
+        path = os.path.join("cache", nvr, basename)
 
-        connection = Connection()
-        db = connection.test_database
-        collection = db.test_collection
-        analysis = db.analysis
-        analysis.insert(json.loads(output))
+        if path.endswith(".rpm") and not \
+                path.endswith(".src.rpm") and \
+                not "-debuginfo-" in path:
+            output = scanner.analyze(path)
+            print output
+
+            connection = Connection()
+            db = connection.test_database
+            collection = db.test_collection
+            analysis = db.analysis
+            analysis.insert(json.loads(output))
 
     return "OK"
 
