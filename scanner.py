@@ -59,6 +59,7 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
         return
 
     # create lookup dictionary
+    nvr = h[rpm.RPMTAG_NVR]
     package = h[rpm.RPMTAG_NAME]
     group = h[rpm.RPMTAG_GROUP]
     names = h['FILENAMES']
@@ -75,10 +76,11 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
     output["build"] = os.path.basename(rpmfile)
     output["files"] = []
     output["daemon"] = False
+    output["nvr"] = nvr
     flag = False
-    directory = False
 
     for entry in a:
+        directory = False
         size = entry.size
 
         # check if package is a daemon

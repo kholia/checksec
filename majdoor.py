@@ -8,18 +8,33 @@ import re
 topurl = 'http://kojipkgs.fedoraproject.org'
 server = 'http://koji.fedoraproject.org/kojihub'
 work_url = 'http://kojipkgs.fedoraproject.org/work'
+lookup = {'i386' : 'i686'}
+
 # this one is not
 build_target = "f19"
 
-def download_url(url, nvr):
-    basename = url.split('/')[-1]
-    # print url
-    # print basename
-    path = os.path.join("cache", nvr, basename)
-    if os.path.exists(path):
-        return
-    prog_meter = urlgrabber.progress.TextMeter()
-    urlgrabber.grabber.urlgrab(url, path, progress_obj=prog_meter)
+def download_url(nvr, urls):
+    for arch, url in urls:
+        arch = lookup.get(arch, arch)
+        basename = url.split('/')[-1]
+
+        # log files are special
+        if basename.endswith(".log"):
+            basepath = os.path.join("cache", nvr, arch)
+        else:
+            basepath = os.path.join("cache", nvr)
+        path = os.path.join(basepath, basename)
+        print "[*]", path
+        try:
+            os.makedirs(basepath)
+        except:
+            pass
+
+        # fetch stuff
+        if os.path.exists(path):
+            continue
+        prog_meter = urlgrabber.progress.TextMeter()
+        urlgrabber.grabber.urlgrab(url, path, progress_obj=prog_meter)
 
 def fetch_koji_build(bid):
     urls = []  # output
@@ -64,12 +79,16 @@ def fetch_koji_build(bid):
         print('Task %i is not a build or buildArch task' % task['id'])
 
     for task in tasks:
+        # print ">>>>", task
+        arch = task.get('arch', 'unkwown')
         output = session.listTaskOutput(task['id'])
+        print ">>>>", arch, task
+        arch = task.get('arch', 'unkwown')
         # logs = [filename for filename in output if filename.endswith('.log')]
         for item in output:
             base_path = koji.pathinfo.taskrelpath(task['id'])
             file_url = "%s/%s/%s" % (work_url, base_path, item)
-            urls.append(file_url)
+            urls.append((arch, file_url))
             # print file_url
             # urls.append(file_url)
 
@@ -87,7 +106,7 @@ def fetch_koji_build(bid):
 
     if not urls:
         return
-    for url in urls:
-        download_url(url, nvr)
+
+    download_url(nvr, urls)
 
     return nvr, urls

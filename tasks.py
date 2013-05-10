@@ -17,7 +17,7 @@ def process(id):
     nvr, urls = majdoor.fetch_koji_build(id)
     if not urls:
         return
-    for url in urls:
+    for arch, url in urls:
         basename = url.split('/')[-1]
         path = os.path.join("cache", nvr, basename)
 
