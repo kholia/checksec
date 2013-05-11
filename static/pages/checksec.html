@@ -197,6 +197,7 @@
           },
           error: function (xOptions, textStatus) {
             term.error("could not find that package");
+            term.set_prompt('> ');
           }
         });
         term.set_prompt('Loading data. Please wait...');
