@@ -13,7 +13,7 @@ lookup = {'i386' : 'i686'}
 # this one is not
 build_target = "f19"
 
-def download_url(nvr, urls):
+def download_url(package, nvr, urls):
     for arch, url in urls:
         arch = lookup.get(arch, arch)
         basename = url.split('/')[-1]
@@ -46,6 +46,7 @@ def fetch_koji_build(bid):
 
     task_id = info["task_id"]
     nvr = info.get("nvr", str(task_id))
+    package = info.get("name", str(task_id))
 
     task = session.getTaskInfo(task_id, request=True)
     if not task:
@@ -82,7 +83,7 @@ def fetch_koji_build(bid):
         # print ">>>>", task
         arch = task.get('arch', 'unkwown')
         output = session.listTaskOutput(task['id'])
-        print ">>>>", arch, task
+        # print ">>>>", arch, task
         arch = task.get('arch', 'unkwown')
         # logs = [filename for filename in output if filename.endswith('.log')]
         for item in output:
@@ -107,6 +108,6 @@ def fetch_koji_build(bid):
     if not urls:
         return
 
-    download_url(nvr, urls)
+    download_url(package, nvr, urls)
 
-    return nvr, urls
+    return package, nvr, urls

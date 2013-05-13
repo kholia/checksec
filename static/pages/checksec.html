@@ -177,7 +177,30 @@
       }
 
       // FIXME make this dynamic
-      baseurl = "http://www.kholia.net:5000/packages";
+      baseurl = "http://localhost:5000/packages";
+      // baseurl = "http://www.kholia.net:5000/packages";
+      grillurl = "http://localhost:5000/grill";
+
+      function fetchgrill(api, term, pp, show) {
+        var store = null;
+        var url = grillurl + api + "&callback=?";
+        $.jsonp({
+          url: url,
+          jsonpCallback: 'jsonCallback',
+          dataType: 'jsonp',
+          success: function(data) {
+            if (pp)
+              jdata = JSON.stringify(data, null, '\t');
+            else
+              jdata = JSON.stringify(data);
+            term.echo(jdata);
+          },
+          error: function (xOptions, textStatus) {
+            term.error("could not find that package");
+          }
+        });
+      }
+
       function fetch(api, term, pp, show) {
         var store = null;
         var url = baseurl + api + "&callback=?";
@@ -211,6 +234,7 @@
           help: function() {
             this.echo("analyze <pkg>");
             this.echo("search <name>");
+            this.echo("grill <pkg>");
             this.echo("list");
           },
           add: function(a, b) {
@@ -227,6 +251,11 @@
             s = "/" + pkg + "/?"
             fetch(s, this, true, 1);
           },
+          grill: function(pkg) {
+            s = "/" + pkg + "/?"
+            fetchgrill(s, this, true, 1);
+          },
+
         }, { height: 400, prompt: '> ', tabcompletion: true, greetings: "checksec shell\n" });
       });
     </script>
