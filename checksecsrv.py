@@ -6,6 +6,8 @@ from flask import request
 from flask import jsonify
 import pymongo
 from bson.json_util import dumps
+import yaml
+import json
 
 app = Flask(__name__)
 app.config.from_pyfile('settings.py')
@@ -92,7 +94,15 @@ def grill(package=None):
 
     if (isinstance(ret, list) and len(ret) != 0) or \
             (not isinstance(ret, list) and ret.count() != 0):
-        output = dumps(ret, sort_keys=True, indent=4)
+        output = []
+        for r in ret:
+            y = yaml.load(r["output"])
+            d = dumps(y, sort_keys=True, indent=4)
+            entry = json.loads(d)
+            entry["opackage"] = r["package"]
+            entry["nvr"] = r["nvr"]
+            output.append(entry)
+        output = dumps(output, sort_keys=True, indent=4)
         if callback:
             output = str(callback) + '(' + str(output) + ')'
         return Response(response=output, status=200,

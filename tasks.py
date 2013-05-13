@@ -60,6 +60,7 @@ def process(id):
         rpmgrill = db.rpmgrill
         entry =  { "nvr" : nvr, "output" : data, "package" : package }
         rpmgrill.insert(entry)
+        print "!!!", err
 
     return "OK"
 

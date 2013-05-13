@@ -194,6 +194,7 @@
             else
               jdata = JSON.stringify(data);
             term.echo(jdata);
+            // display(data, term);
           },
           error: function (xOptions, textStatus) {
             term.error("could not find that package");
@@ -217,6 +218,7 @@
             if (show == 1) {
               tdisplay(data, term);
             }
+            term.set_prompt('> ');
           },
           error: function (xOptions, textStatus) {
             term.error("could not find that package");
