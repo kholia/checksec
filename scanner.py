@@ -12,6 +12,8 @@ try:
     import libarchive
 except ImportError:
     print >> sys.stderr, "Please install python-libarchive from PyPI"
+    print >> sys.stderr, "Using virtualenv is recommended"
+    print >> sys.stderr, "e.g. virtualenv --system-site-packages ~/venv"
     sys.exit(-1)
 
 try:

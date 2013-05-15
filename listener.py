@@ -1,7 +1,20 @@
+#!/usr/bin/env python
+
+import sys
 import json
 import pprint
-import zmq
-from tasks import process
+try:
+    import zmq
+except ImportError:
+    print >> sys.stderr, "Please install python-zmq rpm package"
+    sys.exit(-1)
+
+try:
+    from tasks import process
+except ImportError:
+    print >> sys.stderr, "Please install celery from PyPI and koji rpm package"
+    sys.exit(-1)
+
 
 def listen_and_print():
     # You can listen to stg at "tcp://stg.fedoraproject.org:9940"

@@ -47,14 +47,14 @@ def process(id):
             stderr=subprocess.PIPE, shell=True)
     _, err = p.communicate()
 
-    output = os.path.join(os.path.realpath("cache"), nvr, "rpmgrill.yaml")
+    output = os.path.join(os.path.realpath("cache"), nvr, "rpmgrill.json")
     if not os.path.exists(output):
         print "!!! rpmgrill failed for", basepath
         print err
     else:
         with open(output) as f:
             data = f.read()
-        # we store the output of rpmgrill.yaml in a database
+        # we store rpmgrill.json in a database
         connection = Connection()
         db = connection.test_database
         rpmgrill = db.rpmgrill

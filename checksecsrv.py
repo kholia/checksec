@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 
-from flask import Flask
-from flask import Response
-from flask import request
-from flask import jsonify
+import sys
+
+try:
+    from flask import Flask
+    from flask import Response
+    from flask import request
+    from flask import jsonify
+except ImportError:
+    print >> sys.stderr, "Please install flask from PyPI"
+    sys.exit(-1)
+
 import pymongo
 from bson.json_util import dumps
-import yaml
 import json
 
 app = Flask(__name__)
@@ -96,9 +102,7 @@ def grill(package=None):
             (not isinstance(ret, list) and ret.count() != 0):
         output = []
         for r in ret:
-            y = yaml.load(r["output"])
-            d = dumps(y, sort_keys=True, indent=4)
-            entry = json.loads(d)
+            entry = json.loads(r["output"])
             entry["opackage"] = r["package"]
             entry["nvr"] = r["nvr"]
             output.append(entry)
