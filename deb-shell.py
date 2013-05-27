@@ -38,7 +38,10 @@ import gzip
 import cmd
 import json
 
-BASE_URL = "http://archive.ubuntu.com/ubuntu/"
+if len(sys.argv) > 1:
+    BASE_URL = "http://mirrors.kernel.org/debian/"
+else:
+    BASE_URL = "http://archive.ubuntu.com/ubuntu/"
 database = {}
 sections = {}
 opformat = "json"
@@ -198,7 +201,12 @@ class Ubuntu(cmd.Cmd):
 
 
     def preloop(self):
-        lookup_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
+        if len(sys.argv) < 2:
+            lookup_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                    "data")
+        else:
+            lookup_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                    "data", sys.argv[1])
         for (path, _, files) in os.walk(lookup_path):
             for fname in files:
                 fpath = os.path.join(path, fname)

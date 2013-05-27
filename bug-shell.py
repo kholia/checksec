@@ -61,6 +61,43 @@ Get scanner.py from https://github.com/kholia/checksec
 $ ./scanner.py %s
 %s"""
 
+bug_template_setxid = """
+Description of problem:
+
+http://fedoraproject.org/wiki/Packaging:Guidelines#PIE says that "you MUST
+enable the PIE compiler flags if your package has suid binaries...".
+
+However, currently %s is not being built with PIE flags. This is a
+clear violation of the packaging guidelines.
+
+This issue (in its wider scope) is being discussed at,
+
+https://fedorahosted.org/fesco/ticket/1104
+
+https://lists.fedoraproject.org/pipermail/devel/2013-March/180827.html
+
+Version-Release number of selected component (if applicable):
+
+%s
+
+How reproducible:
+
+You can use following programs to check if a package is hardened:
+
+http://people.redhat.com/sgrubb/files/rpm-chksec
+
+OR
+
+https://github.com/kholia/checksec
+
+Steps to Reproduce:
+
+Get scanner.py from https://github.com/kholia/checksec
+
+$ ./scanner.py %s
+%s"""
+
+
 from scanner import analyze
 
 pkg = None

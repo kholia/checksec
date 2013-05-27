@@ -129,8 +129,8 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
                 fh = cStringIO.StringIO(contents)
                 elf = Elf(fh)
                 out = process_file(elf)
-                dataline = "%s,%s,%s,%s" % (package, os.path.basename(rpmfile),
-                                            filename, out)
+                dataline = "%s,%s,%s,mode=%s,%s" % (package, os.path.basename(rpmfile),
+                                            filename, oct(entry.mode), out)
                 returncode = 0
             except ELFError as exc:
                 if show_errors:

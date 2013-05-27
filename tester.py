@@ -1,5 +1,11 @@
 from tasks import *
 
+import sys
+
+process(sys.argv[1])
+
+# process(420245)
+
 # process(418453)
 # process(418456)
 process(418022)  # good

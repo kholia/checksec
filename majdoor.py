@@ -36,11 +36,28 @@ def download_url(package, nvr, urls):
         prog_meter = urlgrabber.progress.TextMeter()
         urlgrabber.grabber.urlgrab(url, path, progress_obj=prog_meter)
 
-def fetch_koji_build(bid):
+def fetch_koji_build(build):
+    """
+    build ==> buildID or NVR
+    """
+
+    if build.isdigit():
+        build = int(build)
+
     urls = []  # output
 
+    pathinfo = koji.PathInfo(topdir=topurl)
     session = koji.ClientSession(server)
-    info = session.getBuild(bid)
+    info = session.getBuild(build)
+    # print session.listArchives(build)
+    # rpms = session.listRPMs(buildID=info['id'])
+    # if not rpms:
+    #    print ":-("
+    # for rpm in rpms:
+    #    fname = pathinfo.rpm(rpm)
+    #    url = pathinfo.build(info) + '/' + fname
+    #    print url
+
     if not info:
         return
 
@@ -60,7 +77,7 @@ def fetch_koji_build(bid):
             found = True
             break
     if not found:
-        print "skipping", bid, task["request"]
+        print "skipping", build, task["request"]
         return
 
     if not task:
@@ -80,11 +97,10 @@ def fetch_koji_build(bid):
         print('Task %i is not a build or buildArch task' % task['id'])
 
     for task in tasks:
-        # print ">>>>", task
+        print ">>>>", task, task['id']
         arch = task.get('arch', 'unkwown')
         output = session.listTaskOutput(task['id'])
-        # print ">>>>", arch, task
-        arch = task.get('arch', 'unkwown')
+        print ">>>>", arch, output
         # logs = [filename for filename in output if filename.endswith('.log')]
         for item in output:
             base_path = koji.pathinfo.taskrelpath(task['id'])
