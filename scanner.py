@@ -61,15 +61,23 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
         return
 
     # create lookup dictionary
+    # print dir(h)
+    # print dir(rpm)
     nvr = h[rpm.RPMTAG_NVR]
     package = h[rpm.RPMTAG_NAME]
     group = h[rpm.RPMTAG_GROUP]
+    caps = h[rpm.RPMTAG_FILECAPS]
     names = h['FILENAMES']
     groups = h[rpm.RPMTAG_FILEGROUPNAME]
     users = h[rpm.RPMTAG_FILEUSERNAME]
     lookup = defaultdict(list)
     for n, u, g in zip(names, users, groups):
         lookup[n].append((u,g))
+
+    filecaps = []
+    for i,cap in enumerate(caps):
+        if cap:
+            filecaps.append([names[i], cap])
 
     lines = ""
     output = {}
@@ -79,6 +87,11 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
     output["files"] = []
     output["daemon"] = False
     output["nvr"] = nvr
+    output["filecaps"] = filecaps
+    if filecaps:
+        output["caps"] = True
+    else:
+        output["caps"] = False
     flag = False
 
     for entry in a:
