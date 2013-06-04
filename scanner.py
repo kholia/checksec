@@ -88,15 +88,21 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
     output["daemon"] = False
     output["nvr"] = nvr
     output["filecaps"] = filecaps
+    output["polkit"] = False
+    output["caps"] = False
+
     if filecaps:
         output["caps"] = True
-    else:
-        output["caps"] = False
+
     flag = False
 
     for entry in a:
         directory = False
         size = entry.size
+
+        # polkit check 1
+        if "polkit-1" in entry.pathname:
+            output["polkit"] = True
 
         # check if package is a daemon
         if "/etc/rc.d/init.d" in entry.pathname or \
@@ -141,7 +147,13 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
             try:
                 fh = cStringIO.StringIO(contents)
                 elf = Elf(fh)
-                out = process_file(elf)
+                if opformat == "json":
+                    out = process_file(elf, deps = True)
+                    # polkit check 2
+                    if "polkit" in out:
+                        output["polkit"] = True
+                else:
+                    out = process_file(elf)
                 dataline = "%s,%s,%s,mode=%s,%s" % (package, os.path.basename(rpmfile),
                                             filename, oct(entry.mode), out)
                 returncode = 0

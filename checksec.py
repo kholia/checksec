@@ -185,13 +185,38 @@ class Elf(object):
                 return "DSO"
         return "Disabled"
 
+    def getdeps(self):
+        deps=[]
 
-def process_file(elfo):
-    return "NX=%s,CANARY=%s,RELRO=%s,PIE=%s,RPATH=%s,RUNPATH=%s," \
+        if self.elffile.num_segments() == 0:
+            return deps
+
+        for segment in self.elffile.iter_segments():
+            if re.search("PT_DYNAMIC", segment['p_type']):
+                # this file uses dynamic linking, so read the dynamic section
+                # and find DT_SONAME tag
+                for section in self.elffile.iter_sections():
+                    if not isinstance(section, DynamicSection):
+                        continue
+                    for tag in section.iter_tags():
+                        if tag.entry.d_tag == 'DT_NEEDED':
+                            deps.append(bytes2str(tag.needed))
+                break
+
+        return deps
+
+
+def process_file(elfo, deps=True):
+
+    output = "NX=%s,CANARY=%s,RELRO=%s,PIE=%s,RPATH=%s,RUNPATH=%s," \
             "FORTIFY=%s,CATEGORY=%s" \
             % (elfo.program_headers(), elfo.canary(), elfo.relro(), elfo.pie(),
-                elfo.dynamic_tags("DT_RPATH"), elfo.dynamic_tags("DT_RUNPATH"),
-                elfo.fortify(), elfo.network())
+                    elfo.dynamic_tags("DT_RPATH"), elfo.dynamic_tags("DT_RUNPATH"),
+                    elfo.fortify(), elfo.network())
+    if deps:
+        output = output + (",DEPS=%s" %  '$'.join(elfo.getdeps()))
+
+    return output
 
 if __name__ == "__main__":
 
