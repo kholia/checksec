@@ -20,7 +20,10 @@ except ImportError as exc:
           file=sys.stderr)
     sys.exit(-1)
 
-# NOTE: add more APR and other common patterns
+# http://people.redhat.com/sgrubb/security/find-elf4tmp
+TMP_FUNCTIONS = ["^mkstemp",  "^tempnam", "^tmpfile"]
+
+# XXX add more APR and other common patterns
 LOCAL_PATTERNS = ["^connect$", "^listen$", "^accept$", "^accept4$",
                   "^apr_socket_accept$", "PR_Accept", "PR_Listen",
                   "^getpeername", "^SSL_accept"]
@@ -87,6 +90,59 @@ class Elf(object):
                         ret = "network-local"
                         break
         return ret
+
+
+    def _strings(self):
+        stream = self.elffile.stream
+        epos = stream.tell()
+        stream.seek(0, 0)
+        data = stream.read()
+        stream.seek(epos, 0)
+
+        ret = []
+
+        # XXX avoid calling eu-strings
+        import subprocess
+        p = subprocess.Popen("eu-strings", shell=True, stdin=subprocess.PIPE,
+                stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        out = p.communicate(input=data)[0]
+
+        for line in out.splitlines():
+            if re.match("^/tmp/.+", line) and "XXX" not in line:
+                ret.append(line)
+
+        return ret
+
+    def tempstuff(self):
+        tmp_strings = self._strings()
+
+        # if there are no /tmp references, just return
+        if len(tmp_strings) == 0:
+            return "None"
+
+        for section in self.elffile.iter_sections():
+            if not isinstance(section, SymbolTableSection):
+                continue
+            if section['sh_entsize'] == 0:
+                print("\nSymbol table '%s' has a sh_entsize " \
+                    "of zero!" % (bytes2str(section.name)), file=sys.stderr)
+                continue
+            for _, symbol in enumerate(section.iter_symbols()):
+                for pattern in TMP_FUNCTIONS:
+                    if re.match(pattern, bytes2str(symbol.name)):
+
+                        return "None"
+
+        return "$".join(tmp_strings)
+
+
+    # XXX implement this
+    def chroot_without_chdir(self):
+        """
+        This functions looks for apps that use chroot(2) without using chdir(2).
+        Inspired by http://people.redhat.com/sgrubb/security/find-chroot
+        """
+        pass
 
     def fortify(self):
         """ NA : FORTIFY_SOURCE was not applicable
@@ -209,10 +265,10 @@ class Elf(object):
 def process_file(elfo, deps=True):
 
     output = "NX=%s,CANARY=%s,RELRO=%s,PIE=%s,RPATH=%s,RUNPATH=%s," \
-            "FORTIFY=%s,CATEGORY=%s" \
+            "FORTIFY=%s,CATEGORY=%s,TEMPPATHS=%s" \
             % (elfo.program_headers(), elfo.canary(), elfo.relro(), elfo.pie(),
                     elfo.dynamic_tags("DT_RPATH"), elfo.dynamic_tags("DT_RUNPATH"),
-                    elfo.fortify(), elfo.network())
+                    elfo.fortify(), elfo.network(), elfo.tempstuff())
     if deps:
         output = output + (",DEPS=%s" %  '$'.join(elfo.getdeps()))
 

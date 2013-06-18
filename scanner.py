@@ -99,7 +99,6 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
     for entry in a:
         directory = False
         size = entry.size
-
         # polkit check 1
         if "polkit-1" in entry.pathname:
             output["polkit"] = True
@@ -110,6 +109,7 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
             output["daemon"] = True
 
         # skip 0 byte files only
+        # NOTE: size can be 0 due to compression also!
         if size == 0 and not stat.S_ISDIR(entry.mode):
             continue
 
@@ -132,9 +132,9 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
 
         # skip library files
         filename = entry.pathname.lstrip(".")
-        if not flag and (("lib" in filename and ".so" in filename) or \
-           filename.endswith(".so")):
-            continue
+        # if not flag and (("lib" in filename and ".so" in filename) or \
+        #   filename.endswith(".so")):
+        #   continue
 
         try:
             contents = a.read(size)
