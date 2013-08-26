@@ -18,7 +18,8 @@ except ImportError:
 
 try:
     import rpm
-except ImportError:
+except ImportError, exc:
+    print exc
     print >> sys.stderr, "Please install rpm-python package"
     sys.exit(-1)
 

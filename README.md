@@ -16,6 +16,13 @@ based distributions).
 The analysis code doesn't install any packages on the system, is host OS
 agnostic and is quite fast (scales linearly).
 
+Dependencies
+------------
+
+```
+$ sudo yum install pkgwat python-xlwt rpm-python python-pyelftools python-six
+```
+
 Interactive Tools Demo
 ----------------------
 

@@ -20,7 +20,7 @@ except ImportError as exc:
     sys.exit(-1)
 
 
-BASE_URL = "http://dl.fedoraproject.org/pub/fedora/linux/development/19/x86_64/os/"
+BASE_URL = "http://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/x86_64/os/"
 database = {}
 sections = {}
 
@@ -36,7 +36,7 @@ def fetch(url, destination):
 def load():
     repomdpath = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                              "data", "repodata", "repomd.xml")
-    rmdo = repoMDObject.RepoMD("F19", repomdpath)
+    rmdo = repoMDObject.RepoMD("rawhide", repomdpath)
     plocation = rmdo.repoData["primary"].location[1]
     plocation = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                              "data", plocation)
