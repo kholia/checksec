@@ -20,7 +20,10 @@ Dependencies
 ------------
 
 ```
-$ sudo yum install pkgwat python-xlwt rpm-python python-pyelftools python-six
+$ sudo yum install pkgwat python-xlwt rpm-python python-pyelftools \
+	python-six libarchive-devel python-pip
+
+$ sudo pip install python-libarchive
 ```
 
 Interactive Tools Demo
