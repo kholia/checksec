@@ -78,6 +78,7 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
         if cap:
             filecaps.append([names[i], cap])
 
+    pols = []
     lines = ""
     output = {}
     output["package"] = package
@@ -89,6 +90,7 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
     output["filecaps"] = filecaps
     output["polkit"] = False
     output["caps"] = False
+    output["pols"] = pols
 
     if filecaps:
         output["caps"] = True
@@ -98,8 +100,11 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
     for entry in a:
         directory = False
         size = entry.size
-        # polkit check 1
-        if "polkit-1" in entry.pathname:
+        # polkit checks, "startswith" is better but ...
+        if "/etc/polkit" in entry.pathname or \
+           "/usr/share/PolicyKit" in entry.pathname or \
+           "/usr/share/polkit-1" in entry.pathname:
+            pols.append(entry.pathname)
             output["polkit"] = True
 
         # check if package is a daemon
