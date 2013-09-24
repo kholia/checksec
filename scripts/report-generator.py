@@ -49,10 +49,16 @@ def privileged_dangerous():
         for f in build["files"]:
             mode = f["mode"]
             if (mode & stat.S_ISUID) or (mode & stat.S_ISGID):
-                if f["PIE"] == off or f["NX"] == off or f["CANARY"] == off or f["RELRO"] == off:
-                    analyze_this = True
-                    if f["CATEGORY"] == "None":
-                        f["CATEGORY"] = "exec"
+                try:
+                    if f["PIE"] == off or f["NX"] == off or f["CANARY"] == off or f["RELRO"] == off:
+                        analyze_this = True
+                        if f["NX"] == off:
+                            print f
+                        if f["CATEGORY"] == "None":
+                            f["CATEGORY"] = "exec"
+                except:
+                    # print "Bad Perms? Skipping", f
+                    pass
 
         daemon = build.get("daemon", False)
         if not daemon and not analyze_this:

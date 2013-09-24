@@ -1,0 +1,14 @@
+$ mongo
+MongoDB shell version: 2.4.6
+connecting to: test
+> show databases;
+local	0.078125GB
+test_database	0.203125GB
+> use test_database;
+switched to db test_database
+> db.dropDatabase()
+{ "dropped" : "test_database", "ok" : 1 }
+> show databases
+local	0.078125GB
+
+# echo "db.dropDatabase()" | mongo <database name>

@@ -11,9 +11,7 @@ import cStringIO
 try:
     import libarchive
 except ImportError:
-    print >> sys.stderr, "Please install python-libarchive from PyPI"
-    print >> sys.stderr, "Using virtualenv is recommended"
-    print >> sys.stderr, "e.g. virtualenv --system-site-packages ~/venv"
+    print >> sys.stderr, "Please install python-libarchive package."
     sys.exit(-1)
 
 try:
@@ -42,7 +40,7 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
         return
 
     if not rpmfile.endswith(".rpm"):
-        print >> sys.stderr, "skipping %s " % rpmfile
+        print >> sys.stderr, "skipping %s" % os.path.basename(rpmfile)
         return
 
     try:

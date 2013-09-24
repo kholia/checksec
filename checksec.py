@@ -16,7 +16,7 @@ try:
     from elftools.elf.dynamic import DynamicSection
 except ImportError as exc:
     print(str(exc), file=sys.stderr)
-    print("""\n[-] Please install pyelftools, run "pip install pyelftools" """,
+    print("""\n[-] Please install python-pyelftools package""",
           file=sys.stderr)
     sys.exit(-1)
 
