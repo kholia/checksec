@@ -1,7 +1,7 @@
 checksec.py
 ===========
 
-This was a rough port of the checksec.sh script by Tobias Klein to Python.
+This is a rough port of the checksec.sh script by Tobias Klein to Python.
 
 My analysis code combines the original checksec (bash script), rpm-chksec
 (Steve's script) and Grant's Go port into one Python code base.
@@ -19,11 +19,40 @@ agnostic and is quite fast (scales linearly).
 Dependencies
 ------------
 
+On Fedora 19 (or higher), the following command will install all the required
+dependencies.
+
 ```
 $ sudo yum install pkgwat python-xlwt rpm-python python-pyelftools \
-	python-six libarchive-devel python-pip
+	python-six libarchive-devel python-pip python-libarchive -y
 
-$ sudo pip install python-libarchive
+```
+
+Checks Done
+-----------
+
+* PIE, RELRO, BIND_NOW
+
+* RPATH, TEMPPATHS, RUNPATH
+
+* Stack Canaries, Non-executable stack
+
+* FORTIFY_SOURCE
+
+* File-based capabilities, setxid
+
+* Polkit policy modification checks
+
+
+Bulk Analysis Tools
+-------------------
+
+Check out scanner.py and scripts under the "scripts" folder.
+
+```
+$ ./scanner.py blueman-1.23-7.fc20.x86_64.rpm json # scan a package
+
+$ ./scanner.py Packages/ # scan entire folders
 ```
 
 Interactive Tools Demo
@@ -193,12 +222,4 @@ kdesudo
 }
 ```
 
-Bulk Analysis Tools
--------------------
-
-Check out scanner.py and code under "scripts" folder.
-
-
 As usual, feedback is welcome :-)
-
-
