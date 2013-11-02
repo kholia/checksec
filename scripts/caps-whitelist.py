@@ -9,7 +9,7 @@ def privileged_dangerous():
         if build["caps"] == True:
             for item in build["filecaps"]:
                 name, caps = item
-                caps = caps.strip("= ")
+                # caps = caps.strip("= ")
                 print "%-30s\t%-30s\t%s" % (build["package"], name, caps)
 
 db = connection.test_database

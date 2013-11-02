@@ -21,46 +21,49 @@ except ImportError as exc:
     sys.exit(-1)
 
 # http://people.redhat.com/sgrubb/security/find-elf4tmp
-TMP_FUNCTIONS = ["^mkstemp",  "^tempnam", "^tmpfile"]
+TMP_FUNCTIONS = set(["^mkstemp",  "^tempnam", "^tmpfile"])
 
 # XXX add more APR and other common patterns
-LOCAL_PATTERNS = ["^connect$", "^listen$", "^accept$", "^accept4$",
-                  "^apr_socket_accept$", "PR_Accept", "PR_Listen",
-                  "^getpeername", "^SSL_accept"]
+LOCAL_PATTERNS = set([
+    "^connect$", "^listen$", "^accept$", "^accept4$",
+    "^apr_socket_accept$", "PR_Accept", "PR_Listen",
+    "^getpeername", "^SSL_accept"])
 
-IP_PATTERNS = ["getaddrinfo", "getnameinfo", "getservent", "getservbyname",
-               "getservbyport", "gethostbyname", "gethostbyname2",
-               "gethostbyaddr", "gethostbyaddr2", "apr_getnameinfo",
-               "PR_GetAddrInfoByName"]
+IP_PATTERNS = set([
+    "getaddrinfo", "getnameinfo", "getservent", "getservbyname",
+    "getservbyport", "gethostbyname", "gethostbyname2",
+    "gethostbyaddr", "gethostbyaddr2", "apr_getnameinfo",
+    "PR_GetAddrInfoByName"])
 
 # FORTIFY_SOURCE checklist
-UNSAFE_FUNCTIONS = ["asprintf",        "mbsnrtowcs",       "snprintf",
-                    "vsyslog",         "confstr",          "mbsrtowcs",
-                    "sprintf",         "vwprintf",         "dprint",
-                    "mbstowcs",        "stpcpy",           "wcpcpy",
-                    "fgets",           "memcpy",           "stpncpy",
-                    "wcpncpy",         "fgets_unlocked",   "memmove",
-                    "strcat",          "wcrtomb",          "fgetws",
-                    "mempcpy",         "strcpy",           "wcscat",
-                    "fgetws_unlocked", "memset",           "strncat",
-                    "wcscpy",          "fprintf",          "obstack_printf",
-                    "strncpy",         "wcsncat",          "fread",
-                    "obstack_vprintf", "swprintf",         "wcsncpy",
-                    "fread_unlocked",  "pread",            "syslog",
-                    "wcsnrtombs",      "fwprintf",         "pread64",
-                    "ttyname_r",       "wcsrtombs",        "getcwd",
-                    "printf",          "vasprintf",        "wcstombs",
-                    "getdomainname",   "ptsname_r",        "vdprintf",
-                    "wctomb",          "getgroups",        "read",
-                    "vfprintf",        "wmemcpy",          "gethostname",
-                    "readlink",        "vfwprintf",        "wmemmove",
-                    "getlogin_r",      "readlinkati",      "vprintf",
-                    "wmempcpy",        "gets",             "realpath",
-                    "vsnprintf",       "wmemset",          "getwd",
-                    "recv",            "vsprintf",         "wprintf"
-                    "longjmp",         "recvfrom",         "vswprintf"]
+UNSAFE_FUNCTIONS = set([
+    "asprintf",        "mbsnrtowcs",       "snprintf",
+    "vsyslog",         "confstr",          "mbsrtowcs",
+    "sprintf",         "vwprintf",         "dprint",
+    "mbstowcs",        "stpcpy",           "wcpcpy",
+    "fgets",           "memcpy",           "stpncpy",
+    "wcpncpy",         "fgets_unlocked",   "memmove",
+    "strcat",          "wcrtomb",          "fgetws",
+    "mempcpy",         "strcpy",           "wcscat",
+    "fgetws_unlocked", "memset",           "strncat",
+    "wcscpy",          "fprintf",          "obstack_printf",
+    "strncpy",         "wcsncat",          "fread",
+    "obstack_vprintf", "swprintf",         "wcsncpy",
+    "fread_unlocked",  "pread",            "syslog",
+    "wcsnrtombs",      "fwprintf",         "pread64",
+    "ttyname_r",       "wcsrtombs",        "getcwd",
+    "printf",          "vasprintf",        "wcstombs",
+    "getdomainname",   "ptsname_r",        "vdprintf",
+    "wctomb",          "getgroups",        "read",
+    "vfprintf",        "wmemcpy",          "gethostname",
+    "readlink",        "vfwprintf",        "wmemmove",
+    "getlogin_r",      "readlinkati",      "vprintf",
+    "wmempcpy",        "gets",             "realpath",
+    "vsnprintf",       "wmemset",          "getwd",
+    "recv",            "vsprintf",         "wprintf"
+    "longjmp",         "recvfrom",         "vswprintf"])
 
-STACK_CHK = "__stack_chk_fail"
+STACK_CHK = set(["__stack_chk_fail", "__stack_smash_handler"])
 
 
 class Elf(object):
@@ -76,7 +79,8 @@ class Elf(object):
             if not isinstance(section, SymbolTableSection):
                 continue
             if section['sh_entsize'] == 0:
-                print("\nSymbol table '%s' has a sh_entsize " \
+                print(
+                    "\nSymbol table '%s' has a sh_entsize "
                     "of zero!" % (bytes2str(section.name)), file=sys.stderr)
                 continue
             for _, symbol in enumerate(section.iter_symbols()):
@@ -91,7 +95,6 @@ class Elf(object):
                         break
         return ret
 
-
     def _strings(self):
         stream = self.elffile.stream
         epos = stream.tell()
@@ -103,8 +106,9 @@ class Elf(object):
 
         # XXX avoid calling eu-strings
         import subprocess
-        p = subprocess.Popen("eu-strings", shell=True, stdin=subprocess.PIPE,
-                stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        p = subprocess.Popen(
+            "eu-strings", shell=True, stdin=subprocess.PIPE,
+            stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         out = p.communicate(input=data)[0]
 
         for line in out.splitlines():
@@ -124,7 +128,8 @@ class Elf(object):
             if not isinstance(section, SymbolTableSection):
                 continue
             if section['sh_entsize'] == 0:
-                print("\nSymbol table '%s' has a sh_entsize " \
+                print(
+                    "\nSymbol table '%s' has a sh_entsize "
                     "of zero!" % (bytes2str(section.name)), file=sys.stderr)
                 continue
             for _, symbol in enumerate(section.iter_symbols()):
@@ -135,26 +140,32 @@ class Elf(object):
 
         return "$".join(tmp_strings)
 
-
     # XXX implement this
     def chroot_without_chdir(self):
         """
-        This functions looks for apps that use chroot(2) without using chdir(2).
+        Check forapps that use chroot(2) without using chdir(2).
+
         Inspired by http://people.redhat.com/sgrubb/security/find-chroot
+
         """
         pass
 
     def fortify(self):
-        """ NA : FORTIFY_SOURCE was not applicable
-            Enabled : unsafe and _chk functions were found
-            Disabled : only unsafe functions were found
-                       (_chk functions missing)"""
+        """
+        Check if source code was compiled with FORTIFY_SOURCE.
+
+        NA : FORTIFY_SOURCE was not applicable
+        Enabled : unsafe and _chk functions were found
+        Disabled : only unsafe functions were found (_chk functions missing)
+
+        """
         ret = "NA"
         for section in self.elffile.iter_sections():
             if not isinstance(section, SymbolTableSection):
                 continue
             if section['sh_entsize'] == 0:
-                print("\nSymbol table '%s' has a sh_entsize " \
+                print(
+                    "\nSymbol table '%s' has a sh_entsize "
                     "of zero!" % (bytes2str(section.name)), file=sys.stderr)
                 continue
             for _, symbol in enumerate(section.iter_symbols()):
@@ -176,17 +187,17 @@ class Elf(object):
                         break
         return ret
 
-
     def canary(self):
         for section in self.elffile.iter_sections():
             if not isinstance(section, SymbolTableSection):
                 continue
             if section['sh_entsize'] == 0:
-                print ("\nSymbol table '%s' has a sh_entsize " \
+                print(
+                    "\nSymbol table '%s' has a sh_entsize "
                     "of zero!" % (bytes2str(section.name)), file=sys.stderr)
                 continue
             for _, symbol in enumerate(section.iter_symbols()):
-                if re.match(STACK_CHK, bytes2str(symbol.name)):
+                if bytes2str(symbol.name) in STACK_CHK:
                     return "Enabled"
         return "Disabled"
 
@@ -207,7 +218,7 @@ class Elf(object):
             return
 
         for segment in self.elffile.iter_segments():
-            if re.search("GNU_STACK", segment['p_type']):
+            if re.search("GNU_STACK", str(segment['p_type'])):
                 if segment['p_flags'] & pflags.PF_X:
                     return "Disabled"
         return "Enabled"
@@ -220,7 +231,7 @@ class Elf(object):
 
         have_relro = False
         for segment in self.elffile.iter_segments():
-            if re.search("GNU_RELRO", segment['p_type']):
+            if re.search("GNU_RELRO", str(segment['p_type'])):
                 have_relro = True
                 break
         if self.dynamic_tags("DT_BIND_NOW") == "Enabled" and have_relro:
@@ -242,13 +253,13 @@ class Elf(object):
         return "Disabled"
 
     def getdeps(self):
-        deps=[]
+        deps = []
 
         if self.elffile.num_segments() == 0:
             return deps
 
         for segment in self.elffile.iter_segments():
-            if re.search("PT_DYNAMIC", segment['p_type']):
+            if re.search("PT_DYNAMIC", str(segment['p_type'])):
                 # this file uses dynamic linking, so read the dynamic section
                 # and find DT_SONAME tag
                 for section in self.elffile.iter_sections():
@@ -265,12 +276,12 @@ class Elf(object):
 def process_file(elfo, deps=True):
 
     output = "NX=%s,CANARY=%s,RELRO=%s,PIE=%s,RPATH=%s,RUNPATH=%s," \
-            "FORTIFY=%s,CATEGORY=%s,TEMPPATHS=%s" \
-            % (elfo.program_headers(), elfo.canary(), elfo.relro(), elfo.pie(),
-                    elfo.dynamic_tags("DT_RPATH"), elfo.dynamic_tags("DT_RUNPATH"),
-                    elfo.fortify(), elfo.network(), elfo.tempstuff())
+        "FORTIFY=%s,CATEGORY=%s,TEMPPATHS=%s" \
+        % (elfo.program_headers(), elfo.canary(), elfo.relro(), elfo.pie(),
+            elfo.dynamic_tags("DT_RPATH"), elfo.dynamic_tags("DT_RUNPATH"),
+            elfo.fortify(), elfo.network(), elfo.tempstuff())
     if deps:
-        output = output + (",DEPS=%s" %  '$'.join(elfo.getdeps()))
+        output = output + (",DEPS=%s" % '$'.join(elfo.getdeps()))
 
     return output
 
@@ -287,12 +298,10 @@ if __name__ == "__main__":
             elf = Elf(fh)
 
         except ELFError as exc:
-            print("%s,Not an ELF binary" % \
-                str(exc), file=sys.stderr)
+            print("%s,Not an ELF binary" % str(exc), file=sys.stderr)
             sys.exit(-1)
         except IOError as exc:
-            print("%s,Not an ELF binary" % \
-                str(exc), file=sys.stderr)
+            print("%s,Not an ELF binary" % str(exc), file=sys.stderr)
             sys.exit(-1)
 
         print(process_file(elf))
@@ -303,11 +312,13 @@ if __name__ == "__main__":
                 filename = sys.argv[i]
                 elf = Elf(open(filename, "rb"))
             except ELFError as exc:
-                print("%s,%s,Not an ELF binary" % \
+                print(
+                    "%s,%s,Not an ELF binary" %
                     (filename, str(exc)), file=sys.stderr)
                 continue
             except IOError as exc:
-                print("%s,%s,Not an ELF binary" % \
+                print(
+                    "%s,%s,Not an ELF binary" %
                     (filename, str(exc)), file=sys.stderr)
                 continue
 
