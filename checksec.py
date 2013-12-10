@@ -143,7 +143,7 @@ class Elf(object):
     # XXX implement this
     def chroot_without_chdir(self):
         """
-        Check forapps that use chroot(2) without using chdir(2).
+        Check for apps that use chroot(2) without using chdir(2).
 
         Inspired by http://people.redhat.com/sgrubb/security/find-chroot
 
