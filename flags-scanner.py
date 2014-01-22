@@ -117,7 +117,7 @@ def analyze(rpmfile):
     # extract debuginfo RPM to "RAMDISK"
     adebug_package = None
     for _, v in debug_packages.items():
-        if debug_package in v:
+        if re.match(debug_package + "\d", os.path.basename(v)):
             adebug_package = v
             break
     if not adebug_package:
@@ -148,6 +148,7 @@ def analyze(rpmfile):
     da.close()
 
     # extract debuginfo RPM into "RAMDISK"
+    print('[*] extracting "debuginfo" RPM %s for %s' % (adebug_package, output["build"]))
     p = subprocess.Popen("rpm2cpio %s | cpio -idmuv" % adebug_package,
                          shell=True, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
