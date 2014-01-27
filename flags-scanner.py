@@ -86,7 +86,8 @@ def analyze(rpmfile):
     output["nvr"] = nvr
 
     try:
-        a = libarchive.Archive(rpmfile)
+        fd = open(rpmfile, "rb")
+        a = libarchive.Archive(fd)
     except Exception, exc:
         print(rpmfile, str(exc))
         return
@@ -112,6 +113,8 @@ def analyze(rpmfile):
                 pass
 
     if not ELFs:
+        a.close()  # prevent handle leak!
+        fd.close()
         return
 
     # extract debuginfo RPM to "RAMDISK"
@@ -122,13 +125,18 @@ def analyze(rpmfile):
             break
     if not adebug_package:
         print('[-] missing "debuginfo" RPM for', output["build"])
+        a.close()  # prevent handle leak!
+        fd.close()
         return
 
     try:
-        da = libarchive.Archive(adebug_package)
+        dfd = open(adebug_package, "rb")
+        da = libarchive.Archive(dfd)
         dac = {}
     except Exception, exc:
         print(adebug_package, str(exc))
+        a.close()  # prevent handle leak!
+        fd.close()
         return
     for entry in da:
         size = entry.size
@@ -145,14 +153,18 @@ def analyze(rpmfile):
 
     # close all file handles
     a.close()
+    fd.close()
+    dfd.close()
     da.close()
 
     # extract debuginfo RPM into "RAMDISK"
-    print('[*] extracting "debuginfo" RPM %s for %s' % (adebug_package, output["build"]))
+    print('[*] extracting "debuginfo" RPM %s for %s' % (adebug_package,
+                                                        output["build"]))
+
     p = subprocess.Popen("rpm2cpio %s | cpio -idmuv" % adebug_package,
                          shell=True, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
-                         cwd=RAMDISK_path)
+                         cwd=RAMDISK_path, close_fds=True)
     p.communicate()
 
     # locate the correct corresponding ".debug" file
@@ -174,12 +186,15 @@ def analyze(rpmfile):
         p = subprocess.Popen("%s %s" % (dwarf_producer_binary,
                                         os.path.basename(found)),
                              cwd=debug_path, shell=True,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                             close_fds=True)
 
         producers, _ = p.communicate()
         fileinfo[ELF] = producers.strip()
-        if "-fstack-protector-strong" not in producers and not "-fstack-protector-all" in producers:
-            print("%s -> %s is not using >= -fstack-protector-strong" % (rpmfile, ELF))
+        if "-fstack-protector-strong" not in producers and \
+                not "-fstack-protector-all" in producers:
+            print("%s -> %s is not using >= -fstack-protector-strong" %
+                  (rpmfile, ELF))
 
         if not producers:
             print("[!]", output["build"],
@@ -237,9 +252,10 @@ def main():
         for fname in files:
             # is this a "debuginfo" package?
             if "-debuginfo-" in fname:
-                debug_packages[fname] = os.path.abspath(os.path.join(path, fname))
+                debug_packages[fname] = os.path.abspath(os.path.join(path,
+                                                                     fname))
 
-    p = multiprocessing.Pool(6)
+    p = multiprocessing.Pool(8)
     outputmap = {}
 
     for (path, _, files) in os.walk(sys.argv[1]):
