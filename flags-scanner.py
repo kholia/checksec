@@ -120,7 +120,7 @@ def analyze(rpmfile):
     # extract debuginfo RPM to "RAMDISK"
     adebug_package = None
     for _, v in debug_packages.items():
-        if re.match(debug_package + "\d", os.path.basename(v)):
+        if re.match(re.escape(debug_package) + "\d", os.path.basename(v)):
             adebug_package = v
             break
     if not adebug_package:
