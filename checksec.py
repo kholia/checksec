@@ -112,7 +112,7 @@ class Elf(object):
         out = p.communicate(input=data)[0]
 
         for line in out.splitlines():
-            if re.match("^/tmp/.+", line) and "XXX" not in line:
+            if re.match(b"^/tmp/.+", line) and "XXX" not in line:
                 ret.append(line)
 
         return ret
