@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 #
 # Modified by Dhiru Kholia (dhiru@openwall.com) for Fedora project in January
-# of 2014. This program was "inspired" by dwarf_producer.c program witten mjw.
+# of 2014. This program is "inspired" by dwarf_producer.c program witten by
+# mjw.
 #
 #-----------------------------------------------------------------------------
 # elftools example: dwarf_die_tree.py
@@ -55,6 +56,7 @@ def get_dwz(path, offset):
                 data = section.data()
                 end = data[offset:].find(b"\x00")
                 return data[offset:offset + end]
+
 
 def get_producer(path):
     with open(path, "rb") as f:

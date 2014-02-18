@@ -33,8 +33,4 @@ with open(sys.argv[1]) as f:
             analysis.insert(data)
         except Exception, exc:
             print line, str(exc)
-            sys.exit(1)
-
-
-
-
+            # sys.exit(1)
