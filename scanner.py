@@ -6,19 +6,19 @@ from checksec import process_file, Elf
 from elftools.common.exceptions import ELFError
 
 import sys
-import cStringIO
+from six.moves import cStringIO
 
 try:
     import libarchive
 except ImportError:
-    print >> sys.stderr, "Please install python-libarchive package."
+    print("Please install python-libarchive package.")
     sys.exit(-1)
 
 try:
     import rpm
-except ImportError, exc:
-    print exc
-    print >> sys.stderr, "Please install rpm-python package"
+except ImportError as exc:
+    print(exc)
+    print("Please install rpm-python package")
     sys.exit(-1)
 
 import os
@@ -45,7 +45,7 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
 
     try:
         a = libarchive.Archive(rpmfile)
-    except Exception, exc:
+    except Exception as exc:
         print >> sys.stderr, rpmfile, str(exc)
         return
 
@@ -55,7 +55,7 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
         fd = os.open(rpmfile, os.O_RDONLY)
         h = ts.hdrFromFdno(fd)
         os.close(fd)
-    except Exception, exc:
+    except Exception as exc:
         print >> sys.stderr, rpmfile, str(exc)
         return
 
