@@ -217,11 +217,16 @@ class Elf(object):
             #      file=sys.stderr)
             return
 
+        found = False
         for segment in self.elffile.iter_segments():
             if re.search("GNU_STACK", str(segment['p_type'])):
+                found = True
                 if segment['p_flags'] & pflags.PF_X:
                     return "Disabled"
-        return "Enabled"
+        if found:
+            return "Enabled"
+
+        return "Disabled"
 
     def relro(self):
         if self.elffile.num_segments() == 0:
