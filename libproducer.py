@@ -65,7 +65,7 @@ def get_producer(debugfile, dwzfile, fast):
             elif attrs.form == 'DW_FORM_strp':  # lucky ;)
                 producers.add(attrs.value)
             else:
-                assert 0
+                print(attrs.form)
             if fast:  # one producer is enough ;(
                 break
         except:

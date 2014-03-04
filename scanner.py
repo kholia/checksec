@@ -149,7 +149,7 @@ def analyze(rpmfile, show_errors=False, opformat="json"):
         returncode = -1
         if not directory:
             try:
-                fh = cStringIO.StringIO(contents)
+                fh = cStringIO(contents)
                 elf = Elf(fh)
                 if opformat == "json":
                     out = process_file(elf, deps=True)
